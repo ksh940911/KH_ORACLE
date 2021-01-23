@@ -463,13 +463,94 @@ order by 9 desc;
 --일련의 실행 코드 작성해두고 호출해서 사용함
 --반드시 하나의 리턴값을 가짐
 
---1. 단일행 함수
+--1. 단일행 함수 : 각행마다 반복 호출되어서 호출된 수만큼 결과를 리턴함
 --      a. 문자처리함수
 --      b. 숫자처리함수
 --      c. 날짜처리함수
 --      d. 형변환함수
 --      e. 기타함수
---2. 그룹함수
+--2. 그룹함수 : 여러행을 grouping(그룹핑)한후, 그룹당 하나의 결과를 리턴함.
+
+--=====================================
+-- 단일행 함수
+--=====================================
+
+--=====================================
+-- a. 문자처리함수
+--=====================================
+
+--length(col):number
+--문자열의 길이를 리턴
+select emp_name, length(emp_name) --emp_name(사원이름)의 길이를 보여줌
+from employee;
+--where절에서도 사용가능
+select emp_name, email
+from employee
+where length(email) > 15; --email의 길이가 15이상인 이메일을 보여줌
+
+--lengthb(col)
+--값의 byte수 리턴
+select emp_name, lengthb(emp_name), email, lengthb(email) --emp_name(사원이름)의 길이, byte수, email의 길이, byte수를 보여줌
+from employee;
+
+--instr(string, search[, position[, occurence]]) /대괄호는 생략가능하다는 뜻임
+--string에서 search가 위치한 index를 반환
+--ORACLE에서는 1-BASED INDEX. 인덱스가 1부터 시작하니 주의
+select instr('kh정보교육원 국가정보원 정보문화사', '정보'), --3을 반환함. string에서 search가 위치한 index를 반환한다고했으니 3이 가리키는건 3번째 인덱스에 위치한걸 알려주는거임
+         instr('kh정보교육원 국가정보원 정보문화사', '안녕'), --0을 반환함. JAVA는 찾는값이 없으면 -1을 리턴하는데 ORACLE은 찾는값이 없을때 0을 리턴함.
+         instr('kh정보교육원 국가정보원 정보문화사', '정보', 5), --11을 반환함. index 5번위치부터 값을 찾기 시작했으니 11번째 index가 search가 찾는 '정보'가 있는 첫위치라 11번째 인덱스에 위치한걸 가리키는것임
+         instr('kh정보교육원 국가정보원 정보문화사', '정보', 1, 3), --15을 반환함. index 1번위치부터 값을 찾기 시작했으나 search가 찾는 '정보'가 있는 3번째 인덱스 위치를 물어봤기 때문에 15번째 인덱스에 위치한 '정보'가 search가 찾는 3번째 '정보'라는걸 알려줌
+         instr('kh정보교육원 국가정보원 정보문화사', '정보', -1) --11을 반환함. startPosition이 음수면 뒤에서부터 검색하는거임. 위에예제는 앞에서부터 몇번째부터 값을 찾아올지였는데 음수를 써서 뒤에서부터도 검색이가능함
+from dual;
+
+--email컬럼값중 '@'의 위치는? (이메일, 인덱스)
+select email, instr(email,'@')
+from employee;
+
+--substr(string, startIndex[, length])
+--string에서 startIndex부터 length개수만큼 잘라내어 리턴
+--length 생략시에는 문자열 끝까지 반환
+
+select substr('show me the money', 6, 2), --6번째 인덱스 문자부터 2개만큼 잘라서 보여줘라! 공백도 인덱스 자리차지함/ me
+         substr('show me the money', 6), --6번째 인덱스 문자부터 끝까지 잘라서 보여줘라! 공백도 인덱스 자리차지함/ me the money
+         substr('show me the money', -5, 3) --뒤에서 5번째 인덱스 문자부터 3개만큼 잘라서 보여줘라! / mon
+from dual;
+
+--@실습문제 : 사원명에서 성(1글자로 가정)만 중복없이 사전순으로 출력
+select distinct substr(emp_name, 1, 1) 성
+from employee
+order by 1;
+
+-- lpad|rpad(string, byte[, padding_char])
+-- byte수의 공간에 string을 대입하고, 남은 공간은 padding_char를 왼쪽|오른쪽에 채울것
+-- padding char는 생략시 공백문자가 나옴
+
+select lpad(email, 20, '#'), --20바이트 공간에 email을 대입하고, 남는 공간은 #으로 왼쪽에 채울것
+         rpad(email, 20, '#'), --20바이트 공간에 email을 대입하고, 남는 공간은 #으로 오른쪽에 채울것
+         lpad(email, 20), --20바이트 공간에 email을 대입하고, 남는 공간은 공백으로 왼쪽에 채울것
+         '[' || lpad(email, 20) || ']', --20바이트 공간에 email을 대입하고, 남는 공간은 []안에 공백으로 왼쪽에 채울것
+         '[' || rpad(email, 20) || ']' --20바이트 공간에 email을 대입하고, 남는 공간은 []안에 공백으로 오른쪽에 채울것
+from employee;
+
+--@실습문제 : 남자사원만 사번, 사원명, 주민번호, 연봉 조회
+--주민번호 뒤 6자리는 ****** 숨김처리할 것.
+select emp_id, emp_name, substr(emp_no,1,8) || '******', (salary + (salary + nvl(bonus ,0))) * 12 --방법 1
+from employee
+where substr(emp_no, 8, 1) in ('1', '3'); 
+
+select emp_id, emp_name, rpad(substr(emp_no,1,8), 14, '*'), (salary + (salary + nvl(bonus ,0))) * 12 --방법 2 
+from employee
+where substr(emp_no, 8, 1) in ('1', '3');
+
+
+
+
+
+
+
+--=====================================
+-- 그룹함수
+--=====================================
 
 
 
