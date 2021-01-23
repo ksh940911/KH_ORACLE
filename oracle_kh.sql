@@ -534,16 +534,13 @@ from employee;
 
 --@실습문제 : 남자사원만 사번, 사원명, 주민번호, 연봉 조회
 --주민번호 뒤 6자리는 ****** 숨김처리할 것.
-select emp_id, emp_name, substr(emp_no,1,8) || '******', (salary + (salary + nvl(bonus ,0))) * 12 --방법 1
+select emp_id, emp_name, substr(emp_no,1,8) || '******', (salary + (salary + nvl(bonus ,0))) * 12 --방법 1 ||로 *붙여주기
 from employee
 where substr(emp_no, 8, 1) in ('1', '3'); 
 
 select emp_id, emp_name, rpad(substr(emp_no,1,8), 14, '*'), (salary + (salary + nvl(bonus ,0))) * 12 --방법 2 
 from employee
 where substr(emp_no, 8, 1) in ('1', '3');
-
-
-
 
 
 
