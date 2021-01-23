@@ -1,0 +1,2 @@
+--for homework
+--n1문제

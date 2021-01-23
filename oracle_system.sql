@@ -32,6 +32,10 @@ FROM DBA_USERS;
 --관리자는 일반사용자를 생성 할 수 있다.
 create user kh
 identified by kh  --비밀번호(대소문자 구분)
+
+create user practice
+identified by practice
+
 default tablespace users; --데이터가 저장될 영역 system | users --한번 만들고 나면, 또 실행할 수 없음
 
 --사용자 삭제
@@ -51,3 +55,4 @@ grant create table to kh;
 
 --한번에 부여하기
 grant connect, resource to kh;
+grant connect, resource to practice;
