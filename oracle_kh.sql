@@ -30,8 +30,21 @@ select * from sal_grade;
 --행(row=record=tuple - 가로, 실제 데이터) 으로 이루어져있다.
 --도메인 domain 하나의 컬럼에 취할수 있는 값의 그룹(범위) - 도메인이 Y/N뿐이면 2가지의 도메인만 가질수 있다고 말할수 있음 남/녀뿐이면 마찬가지 2가지 도메인만 가진거임
 
---테이블 명세
+--테이블 명세(describe)
 --컬럼명      널여부     자료형
+
+--1. 컬럼명
+--대소문자 구분이 없음
+--(empid, empId, EMPID 모두 다 같음.. -> Camel-Casing도 의미가 없음
+--> 그래서 언더스코어를 이용해서 단어구분
+-- -> emp_id, EMP_ID)
+--2. 널여부
+-- 값이 없을 수 있으면 null (선택, 생략가능),
+-- 값이 없을 수 없으면 not null(꼭 기입해야함, 필수)
+--like 회원가입's 필수, 선택 표시
+--3. 자료형(해당크기)
+-- 자료형 종류 : 날짜형, 숫자형, 문자형
+
 describe employee; --둘중하나 사용
 desc employee; --둘중하나 사용
 
@@ -218,7 +231,7 @@ order by EMP_NAME asc; --기본값이 오름차순이라 asc빼줘도 값은 똑
 --=====================================
 --table의 존재하는 컬럼
 --가상컬럼(산술연산) salary * 12는 없는 컬럼인데 산술연산해서 만들어줌
---임의의 값(literal), 123,'안녕'쓰면 없는 컬럼인데 표시해줌
+--임의의 값(literal), 123, '안녕' 쓰면 없는 컬럼인데 표시해줌
 --각 컬럼은 별칭(alias)를 가질 수 있다. as ""안에 넣어주면 컬럼명이 아닌 별칭으로 표시해줌, as와 "(쌍따옴표)"는 생략가능
 select emp_name as "사원명", phone, salary, salary * 12, 123, '안녕'
 from employee;
@@ -480,9 +493,10 @@ order by 9 desc;
 --=====================================
 
 --length(col):number
---문자열의 길이를 리턴
+--문자열의 길이를 리턴 
 select emp_name, length(emp_name) --emp_name(사원이름)의 길이를 보여줌
 from employee;
+
 --where절에서도 사용가능
 select emp_name, email
 from employee
@@ -536,9 +550,9 @@ from employee;
 --주민번호 뒤 6자리는 ****** 숨김처리할 것.
 select emp_id, emp_name, substr(emp_no,1,8) || '******', (salary + (salary + nvl(bonus ,0))) * 12 --방법 1
 from employee
-where substr(emp_no, 8, 1) in ('1', '3'); 
+where substr(emp_no, 8, 1) in ('1', '3');
 
-select emp_id, emp_name, rpad(substr(emp_no,1,8), 14, '*'), (salary + (salary + nvl(bonus ,0))) * 12 --방법 2 
+select emp_id, emp_name, rpad(substr(emp_no,1,8), 14, '*'), (salary + (salary + nvl(bonus ,0))) * 12 --방법 2
 from employee
 where substr(emp_no, 8, 1) in ('1', '3');
 
@@ -920,8 +934,6 @@ from employee; --********************************************여기 다시보기
 select max(salary) , min(salary) from employee; --숫자(최고월급,최소월급)
 select max(hire_date), min(hire_date) from employee; --날짜(마지막입사,최초입사)
 select max(emp_name), min(emp_name) from employee; --문자(사전순 ㅎ쪽에 가까운사람이름, 사전순 ㄱ쪽에 가까운사람이름)
-
-
 
 
 

@@ -36,6 +36,9 @@ identified by kh  --비밀번호(대소문자 구분)
 create user practice
 identified by practice
 
+create user test
+identified by test
+
 default tablespace users; --데이터가 저장될 영역 system | users --한번 만들고 나면, 또 실행할 수 없음
 
 --사용자 삭제
@@ -55,4 +58,3 @@ grant create table to kh;
 
 --한번에 부여하기
 grant connect, resource to kh;
-grant connect, resource to practice;

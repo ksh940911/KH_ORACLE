@@ -49,7 +49,7 @@
     
     select instr(filepath,'\',-1) --substr돌릴때 filepath에서 자르기 시작할 인덱스 넘버 찾기. 근데 찾고나서 \를 출력하고 싶지않으니 +1을 해주면 \를 빼고 출력할수있음
     from tbl_files;
-    
+
     
     
     
