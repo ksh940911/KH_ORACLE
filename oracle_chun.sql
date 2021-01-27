@@ -46,12 +46,54 @@ from tb_department
 where capacity >= 20 and capacity<=30
 order by department_name asc;
 
---@실습문제 6 :
+--@실습문제 6 : 춘 기술대학교는 총장을 제외하고 모든 교수들이 소속 학과를 가지고 있다. 그럼 춘기술대학교 총장의 이름을 알아낼 수 있는 SQL 문장을 작성하시오.
+select professor_name
+from tb_professor
+where department_no is null;
 
---@실습문제 7 :
+--@실습문제 7 : 혹시 전산상의 착오로 학과가 지정되어 있지 않은 학생이 있는지 확인하고자 한다. 어떠한 SQL 문장을 사용하면 될 것인지 작성하시오
+select department_no
+from tb_student
+where department_no is null;
 
---@실습문제 8 :
+--@실습문제 8 : 수강신청을 하려고 한다. 선수과목 여부를 확인해야 하는데, 선수과목이 존재하는 과목들은 어떤 과목인지 과목번호를 조회해보시오.
+select class_no
+from tb_class
+where preattending_class_no is not null;
 
---@실습문제 9 :
+--@실습문제 9 : 춘 대학에는 어떤 계열(CATEGORY)들이 있는지 조회해보시오.
+select distinct category
+from tb_department
+order by category asc;
 
---@실습문제 10 :
+--@실습문제 10 : 02 학번 전주 거주자들의 모임을 만들려고 한다. 휴학한 사람들은 제외한 재학중인 학생들의 학번, 이름, 주민번호를 출력하는 구문을 작성하시오.
+select student_no, student_name, student_ssn
+from tb_student
+where absence_yn = 'N' and substr(entrance_date,1,2) = '02' and substr(student_address,1,2) = '전주';
+
+--@실습문제 11 : 학과테이블에서 계열별 정원의 평균을 조회(정원 내림차순 정렬)
+select category, trunc(avg(capacity),0) capacity
+from tb_department
+group by category
+order by capacity;
+
+--@실습문제 12 : 휴학생을 제외하고, 학과별로 학생수를 조회(학과별 인원수 내림차순)
+select department_no 학과, count(department_no) 학과별인원수
+from tb_student
+where absence_yn = 'Y'
+group by department_no
+order by count(department_no);
+
+--@실습문제 13 : 과목별 지정된 교수가 2명이상인 과목번호와 교수인원수를 조회
+select class_no 과목번호, count(professor_no) 교수인원수
+from tb_class_professor
+group by class_no
+having count(professor_no) >= 2;
+
+--@실습문제 14 : 학과별로 과목을 구분했을때, 과목구분이 "전공선택"에 한하여 과목수가 10개 이상인 행의 학과번호, 과목구분(class_type), 과목수를 조회(전공선택만 조회)
+select department_no 학과번호, class_type 과목구분, count(class_name) 과목수
+from tb_class
+where class_type = '전공선택'
+group by department_no, class_type
+having count(class_name) >=10
+order by department_no;
