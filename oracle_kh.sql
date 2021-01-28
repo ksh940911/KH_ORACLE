@@ -935,6 +935,594 @@ select max(salary) , min(salary) from employee; --숫자(최고월급,최소월�
 select max(hire_date), min(hire_date) from employee; --날짜(마지막입사,최초입사)
 select max(emp_name), min(emp_name) from employee; --문자(사전순 ㅎ쪽에 가까운사람이름, 사전순 ㄱ쪽에 가까운사람이름)
 
+--=====================================
+-- DQL2
+--=====================================
+--=====================================
+-- GROUP BY
+--=====================================
+--지정컬럼기준으로 세부적인 그룹핑이 가능하다.
+--group by구문 없이는 전체를 하나의 그룹으로 취급한다.
+--group by 절에 명시한 컬럼만 select절에 사용가능하다.
+
+select sum(salary)
+from employee; -- salary 전체를 하나의 그룹으로 취급하여 값 출력시킴
+
+select dept_code, sum(salary)
+from employee
+group by dept_code; -- group by를 써서 그룹취급시켜서 부서별로 salary 값 출력시킴
+
+select emp_name, dept_code, salary
+from employee
+order by dept_code; -- 조회해보면 부서를 그룹별로 묶어서 위쪽결과대로 출력시켜준걸 확인할 수 있음
+
+select --emp_name,  -- 그룹함수가 아닌 컬럼은 group by 절에 명시한 컬럼만 select절에 사용가능하다. ORA-00979: not a GROUP BY expression 
+dept_code, sum(salary) -- group by에는 없지만 salary는 그룹함수안에서 쓰였기 때문에 사용가능
+from employee
+group by dept_code; 
+
+select dept_code, sum(salary)
+from employee
+group by dept_code; --일반컬럼 | 가공컬럼이 가능
+
+select job_code, trunc(avg(salary),1) --가공컬럼이 사용되었는데 돌려보면 가공컬럼이 가능하다는거 확인 가능
+from employee
+group by job_code 
+order by job_code; 
+
+--부서코드별 사원수 조회
+select nvl(dept_code, 'intern'), count(dept_code), count(*)
+from employee
+group by dept_code
+order by dept_code; -- count(*)로 해주는게 좋음 왜냐면 count(dept_code)하면 null값을 빼고 집계해줘서 돌려보면 결과가 다른걸 확인할수 있다.
+
+--부서코드별 사원수, 급여평균, 급여합계 조회
+select nvl(dept_code, 'intern') 부서코드, count(*) 사원수, trunc(avg(salary),1) 급여평균, sum(salary) 급여합계
+from employee
+group by dept_code
+order by dept_code; --내가한 ver.
+
+select nvl(dept_code, 'intern') 부서코드, count(*) 사원수, to_char(trunc(avg(salary),1), 'fmL9,999,999,999.0') 급여평균, to_char(sum(salary),'fmL9,999,999,999') 급여합계
+from employee
+group by dept_code
+order by dept_code; --강사님 ver. 포매팅까지 해준 결과 good!
+
+--성별 인원수, 평균급여 조회 
+select decode(substr(emp_no, 8, 1), '1', '남', '3', '남', '여') gender, count(*) count
+from employee
+group by decode(substr(emp_no, 8, 1), '1', '남', '3', '남', '여'); --성별의 컬럼이 없으므로 가상컬럼으로 만들어서 진행시키면됨, 단 group by에서 그룹지어준 그대로 select쪽에 가져다가 써야함. group by에서 묶고 select에서 가져다가 gender라는 가상컬럼을 만들어준것
+
+--성별 인원수, 평균급여 조회 
+select decode(substr(emp_no, 8, 1), '1', '남', '3', '남', '여') gender, count(*) count, to_char(trunc(avg(salary),1), 'fmL9,999,999,999.0') 급여평균
+from employee
+group by decode(substr(emp_no, 8, 1), '1', '남', '3', '남', '여');
+
+--직급코드 J1을 제외하고, 입사년도별 인원수를 조회
+select extract(year from hire_date) yyyy, count(*) count
+from employee
+where job_code != 'J1' -- != 대신에 <>를 써도됨
+group by extract(year from hire_date)
+order by yyyy;
+
+--두개 이상의 컬럼으로 그룹핑 가능
+select nvl(dept_code, '인턴'), job_code, count(*)
+from employee
+group by dept_code, job_code --부서내의 직급이 어떻게되는가 / 부서별로 먼저묶고 그안에 같은 직급끼리 몇명있는지 묶어서 찾아준거임
+order by 1,2; --첫번째 컬럼(nvl(dept_code, '인턴'))을 기준으로 먼저 정렬시키고 두번째 컬럼(job_code)을 정렬기준으로 삼아서 정렬시켜라
+
+--부서별 성별 인원수 조회
+select nvl(dept_code,'인턴') 부서, decode(substr(emp_no,8,1), '1', '남', '3', '남', '여') 성별, count(*)
+from employee
+group by dept_code, decode(substr(emp_no,8,1), '1', '남', '3', '남', '여')
+order by 1,2;
+
+--=====================================
+-- HAVING
+--=====================================
+--group by 이후 조건절
+
+--부서별 평균 급여가 3,000,000원 이상인 부서만 평균급여와 함께 조회(부서별 평균 급여를 group by한 이후 조건을 걸었음), 그룹함수는 where절에서 못씀
+select dept_code, trunc(avg(salary)) avg
+from employee
+group by dept_code
+having avg(salary) >= 3000000
+order by 1;
+
+--직급별 인원수가 3명이상인 직급 조회
+select job_code, count(*)
+from employee
+group by job_code
+having count(*) >= 3
+order by job_code;
+
+--관리하는 사원이 2명이상인 manager의 아이디와 관리하는 사원수 조회 / 매니져 아이디가 없는 사원은 빼야함(아직 관리하는 사람이없다는것)
+select manager_id 매니져아이디, count(*) 관리하는사원수
+from employee
+where manager_id is not null
+group by manager_id
+having count(*)>=2
+order by 1; --방법1
+
+select manager_id 매니져아이디, count(*) 관리하는사원수
+from employee
+group by manager_id
+having count(manager_id)>=2 --count를 *(전체)로 해주지않고 manager_id로 해주면 null값인 애들은 이단계에서 이미 count가 안되므로 where절에 따로 조건을 걸어주지않아도 된다.
+order by 1; --방법2
+--having은 여기까지임
+
+--=====================================
+-- rollup | cube(col1, col2...) 특별한 함수
+--=====================================
+--group by절에서 사용하는 함수
+--그룹핑 결과에 대해 소계를 제공
+
+--rollup 지정컬럼에 대해 단방향 소계 제공
+--cube 지정컬럼에 대해 양방향 소계 제공
+--지정컬럼이 하나인 경우, rollup/cube의 결과는 같다. 두개이상부터 차이가남
+
+select dept_code, count(*)
+from employee
+group by dept_code;
+
+select dept_code, count(*)
+from employee
+group by rollup(dept_code) --위에서 한것에 대한 소계를 만들어줌. null이라는 행이 하나가 더생김 기존에 있던 null은 인턴을 가리키는 null이고, 방금생긴건 소계를 가리키는 null임
+order by 1;
+
+select dept_code, count(*)
+from employee
+group by cube(dept_code) --지정컬럼이 하나이므로, rollup/cube의 결과가 같다. 
+order by 1;
+
+--grouping()
+--실제데이터(0을리턴함)  | 집계데이터(1을리턴함) 컬럼을 구분하는 함수
+
+--cf)참고
+--select nvl(dept_code,'인턴'), count(*)
+--from employee
+--group by rollup(dept_code)
+--order by 1; -- null이 꼴보기 싫어서 nvl처리해주고 돌려보면 소계를 가리키는 null도 인턴으로 바꿔버림 / 이러면안됨
+
+select dept_code, grouping(dept_code), count(*)
+from employee
+group by rollup(dept_code)
+order by 1;
+
+select decode(grouping(dept_code), 0, nvl(dept_code, '인턴'), 1, '합계') dept_code, 
+--grouping(dept_code), 
+count(*)
+from employee
+group by rollup(dept_code)
+order by 1; --이렇게 해줘야 널을 분리해서 각각 인턴과 합계로 이름을 바꿔줄수 있음
+
+--두개이상의 컬럼을 rollup | cube에 전달하는 경우
+--cf)
+--select dept_code, job_code, count(*)
+--from employee
+--group by dept_code, job_code
+--order by 1,2; --위에서 했던 부서별로 그룹핑해주고 직급별로 그룹핑해준내용
+
+-----------------------------------------rollup----------------------------------------------
+select dept_code, job_code, count(*)
+from employee
+group by rollup(dept_code, job_code) --부서별 소계를 내줌
+order by 1,2; 
+
+select dept_code, decode(grouping(job_code), 0, job_code, '소계') job_code, count(*)
+from employee
+group by rollup(dept_code, job_code)
+order by 1,2; --소계를 의미하는 null값 없애줌
+
+select decode(grouping(dept_code), 0, nvl(dept_code, '인턴'), '합계') dept_code, decode(grouping(job_code), 0, job_code, '소계') job_code, count(*)
+from employee
+group by rollup(dept_code, job_code)
+order by 1,2; --인턴을 의미하는 null값까지 없애주고 합계의 null까지 없애준 최종 ver
+-----------------------------------------rollup----------------------------------------------
+
+--======================구분선==========================--
+
+------------------------------------------cube-----------------------------------------------
+select dept_code, job_code, count(*)
+from employee
+group by cube(dept_code, job_code)
+order by 1,2; --rollup을 cube로 바꿔줌. rollup 때보다 뭐가 많아진걸 알수있음 22~28행이 생김. 소계가 추가로 생긴것
+
+select decode(grouping(dept_code), 0, nvl(dept_code, 'intern'), '소계') dept_code, job_code, count(*)
+from employee
+group by cube(dept_code, job_code)
+order by 1,2; --인턴과 소계 null값을 이름지어줌
+
+select decode(grouping(dept_code), 0, nvl(dept_code, 'intern'), '소계') dept_code, decode(grouping(job_code), 0 , job_code, '소계') job_code, count(*)
+from employee
+group by cube(dept_code, job_code)
+order by 1,2; --두번째 컬럼으로 그루핑해줬을때의 소계 null값을 이름지어줌
+------------------------------------------cube-----------------------------------------------
+
+/*
+전부배움 순서까지 복습필수
+
+select (5)
+from (1)
+where (2)
+group by (3)
+having (4)
+order by (6)
+
+*/
+
+
+--relation 만들기
+--가로방향 합치기 JOIN 행 + 행
+--세로방향 합치기 UNION 열 + 열
+
+
+--=====================================
+-- JOIN
+--=====================================
+--두개 이상의 테이블을 연결해서 하나의 가상테이블(relation)을 생성
+--기준컬럼을 가지고 행을 연결한다.
+
+--송종기 사원의 부서명을 조회 
+select dept_code 
+from employee
+where emp_name = '송종기'; --D9이 나옴
+
+select dept_title
+from department
+where dept_id = 'D9'; --위에서 한 과정으로 D9을 이용해서 총무부라는걸 알아냄
+
+--join
+select *
+from employee E join department D --여기서 E와 D는 테이블 별칭임
+on E.dept_code = D.dept_id; --join을 써서 E.dept_code 와 D.dept_id가 같으면 테이블 합쳐라 엄밀히말하면 같은 행을 찾아서 같은행끼리 붙인거임
+
+select * from employee;
+select * from department;
+
+select D.dept_title --부서를 찾아라
+from employee E join department D 
+on E.dept_code = D.dept_id
+where E.emp_name = '송종기'; --송종기가 있는 // join을 이용해서 한 테이블에서 바로 총무부라는걸 찾아냈음
+
+--join 종류
+--1. EQUI-JOIN | 동등조인 | 동등비교조건(=)에 의한 조인 
+   --기존 컬럼 값이 같으면 합쳐라
+   --대부분의 JOIN이 EQUI-JOIN을 사용
+--2. NON-EQUI JOIN | 동등비교조건이 아닌(between...and..., in, not in, !=, like) 조인
+   -- =이 아니면 다 NON-EQUI JOIN에 해당함
+
+--join 문법
+--1. ANSI 표준문법 : 모든 DBMS 공통문법 | .join 키워드 사용
+--2. Vendor별 문법 : DBMS별로 지원하는 문법. 오라클전용문법도 있음
+        --다른 DBMS program에서 사용할 수 없음
+        --오라클 전용문법 | ,(콤마) 키워드 사용
+
+--컬럼명이 두 테이블에 유일하다면 별칭을 생략할 수도 있음
+--but 되도록이면 별칭을 써주기
+
+--테이블 별칭
+
+
+--employee테이블의 job_code와 job테이블의 job_code가 연결되어 있음
+select * from employee;
+select * from job;
+
+--별칭을 뺀다면 테이블명을 그대로 적어줌
+     --why? 따로 부를 이름이 없기 때문
+select *
+from employee join job
+    on employee.job_code = job.job_code;
+
+--Error : "column ambiguously defined"
+--어디에 있는 job_code인지 모르기 때문
+select emp_name, job_code, job_name
+from employee join job
+    on employee.job_code = job.job_code;
+
+--테이블명을 반드시 명시해줘야함
+--but 테이블명을 일일이 써주기란 번거로움 -> 별칭 사용
+select employee.emp_name, job.job_code, job.job_name
+from employee join job
+    on employee.job_code = job.job_code;
+
+select E.emp_name, J.job_code, J.job_name
+from employee E join job J
+    on E.job_code = j.job_code;
+
+--기준 컬럼명이 좌우테이블에서 동일하다면, on 대신 using 사용가능
+--E.jobcode, J.jobcode와 같은 해당컬럼에 별칭을 사용할 수 없다
+--why? 공통된 것을 하나로 합쳐서 한번만 출력하기 때문
+--ORA-25154: column part of USING clause cannot have qualifier
+select E.emp_name,
+             job_code, --별칭 사용 불가
+             J.job_name
+from employee E join job J
+    using(job_code);
+--출력 : using에 사용하는 컬럼이 맨 앞컬럼으로 빼내면서, 중복된 것을 한번만 출력해줌
+
+
+
+--equi-join 종류
+/*
+1. equi join 교집합 (공통된 부분만 추려냄)
+
+2. outer join 합집합
+    - left outer join 좌측테이블 기준 합집합
+    - right outer join 우측테이블 기준 합집합
+    - full outer join 양테이블 기준 합집합
+
+3. cross join
+    두테이블간의 조인할 수 있는 최대 경우의 수를 표현
+    (행과 행이 만날 수 있는 모든 경우를 보여줌)
+
+4. self join
+    같은 테이블의 조인
+
+5. multiple join
+    3개 이상의 테이블을 조인
+
+*/
+
+--=====================================
+-- INNER JOIN
+--=====================================
+--A (inner) join B
+--교집합
+--1. 기준컬럼값이 null인 경우, 결과집합에서 제외
+--2. 기준컬럼값이 상대테이블 존재하지 않는 경우, 결과집합에서 제외.
+
+--1. employee에서 dept_code가 null인 행 제외 : 인턴사원2행(하동운, 이오리) 제외
+--2. department에서 dept_id가 D3, D4, D7인 행은 제외
+
+select *
+from employee E join department D
+    on E.dept_code = D.dept_id; 
+    --22 
+
+select distinct D.dept_id
+from employee E join department D
+   on E.dept_code = D.dept_id;
+   --6
+
+select *
+from employee E join job J
+    on E.job_code = J.job_code;
+   --24
+   --빠진것 없음
+
+
+--Oracle Ver.
+select *
+from employee E, department D
+where E.dept_code = D.dept_id;
+--22
+
+select *
+from employee E, department D
+where E.dept_code = D.dept_id and E.dept_code = 'D5';
+--6
+
+select *
+from employee E, job J
+where E.job_code = J.job_code;
+--24
+
+
+--=====================================
+-- OUTER JOIN
+--=====================================
+--1. left (outer) join
+--좌측테이블 기준
+--좌측테이블 모든 행이 포함, 우측테이블에는 on조건절에 만족하는 행만 포함.
+
+select *
+from employee E left outer join department D
+   on E.dept_code = D.dept_id; --인턴사원2행(하동운, 이오리)은 포함되었지만 해당하는 값이 없어 null로 채워져있는걸 볼수있다. 
+--24 = 22 + 2(left)
+
+
+--Oracle Ver.
+--기준테이블의 반대편 컬럼에 (+)를 추가
+select *
+from employee E, department D
+where E.dept_code = D.dept_id;
+--22행나오는 inner join이랑 같은결과나옴
+select *
+from employee E, department D
+where E.dept_code = D.dept_id(+);
+--24행 나옴
+   
+   
+--2. right (outer) join
+--우측테이블 기준
+--우측테이블 모든 행이 포함, 좌측테이블에는 on조건절에 만족하는 행만 포함.
+select *
+from employee E right outer join department D
+   on E.dept_code = D.dept_id; --부서3행(D3, D4, d7)은 포함되었지만 해당하는 값이 없어 null로 채워져있는걸 볼수있다. 
+--25 = 22 + 3(right)
+
+
+--Oracle Ver.
+select *
+from employee E, department D 
+where E.dept_code(+) = D.dept_id;
+--25
+
+
+select *
+from employee;
+
+--3. full (outer) join
+--완전 조인.
+--좌우테이블 모두 포함
+select *
+from employee E full outer join department D
+   on E.dept_code = D.dept_id;
+--27 = 22 + 2(left) + 3(right)
+
+
+--Oracle Ver.은 full join을 지원하지 않는다.
+
+
+--사원명/부서명 조회시
+--부서지정이 안된 사원은 제외 : inner join
+--부서지정이 안된 사원도 포함 : left join
+--사원배정이 안된 부서도 포함 : right join
+
+
+--=====================================
+-- CROSS JOIN -이런게 가능하다정도로 알아두고 쓸일이없음
+--=====================================
+--상호조인
+--on조건절 없이, 좌측테이블의 행과 우측테이블의 행이 연결될 수 있는 모든 경우의 수를 포함한 결과집합.
+--Cartesian's Product
+
+--사용법
+select *
+from employee E cross join department D;
+--216 = 24 * 9
+
+
+--Oracle Ver.
+select *
+from employee E, department D;
+
+
+--일반 컬럼, 그룹함수 결과를 함께 보고자 할때는 사용함
+select emp_name, salary, avg(salary)
+from employee; -- ORA-00937: not a single-group group function / 이렇게 사용 불가
+
+select trunc(avg(salary))
+from employee; -- 이렇게는 사용 가능
+
+select emp_name, salary, avg
+from employee E cross join (select trunc(avg(salary)) avg
+                                        from employee) A; --일반 컬럼과 그룹함수 결과 같이 보는게 가능해짐
+                                        
+select emp_name, salary, avg, salary - avg 급여차이
+from employee E cross join (select trunc(avg(salary)) avg 
+                                        from employee) A; --평균급여보다 내가 얼마나 덜, 더 받는지 구할수도 있게됨
+                                        
+--=====================================
+-- SELF JOIN
+--=====================================
+--조인시 같은 테이블을 좌/우측 테이블로 사용
+
+--사번, 사원명, 관리자사번, 관리자명 조회
+select E1.emp_id, E1.emp_name, E1.manager_id, E2.emp_id, E2.emp_name
+from employee E1 join employee E2
+    on E1.manager_id = E2.emp_id;
+    
+select *
+from employee E1 join employee E2
+    on E1.manager_id = E2.emp_id;
+    
+    
+--Oracle Ver.
+select E1.emp_id, E1.emp_name, E1.manager_id, E2.emp_id, E2.emp_name
+from employee E1, employee E2
+where E1.manager_id = E2.emp_id;
+
+select *
+from employee E1, employee E2
+where E1.manager_id = E2.emp_id;
+    
+
+--=====================================
+-- MULTIPLE JOIN
+--=====================================
+--한번에 좌우 두 테이블씩 조인하여 3개이상의 테이블을 연결함.
+
+--사원명, 부서명, 지역명
+
+select * from employee; --E.dept_code
+select * from department; --D.dept_id, D.location_id
+select * from location; --L.local_code
+
+select E.emp_name, D.dept_title, L.local_name
+from employee E
+    join department D
+        on E.dept_code = D.dept_id
+    join location L
+        on D.location_id = L.local_code
+where E.emp_name = '송종기'; --송종기 사원의 부서명, 지역명 테이블 연결후 한번에 검색
+
+select E.emp_name, D.dept_title, L.local_name
+from employee E
+    left join department D
+        on E.dept_code = D.dept_id
+    left join location L
+        on D.location_id = L.local_code;
+        
+--select E.emp_name, D.dept_title, L.local_name
+--from employee E
+--    left join department D
+--        on E.dept_code = D.dept_id
+--    join location L
+--        on D.location_id = L.local_code; --데이터누락됨
+
+--조인하는 순서를 잘 고려할 것.
+--left join으로 시작했으면, 끝까지 유지해줘야 데이터가 누락되지 않는 경우가 있다.
+
+
+--Oracle Ver.
+select *
+from employee E, department D, location L, job J
+where E.dept_code = D.dept_id
+    and D.location_id = L.local_code
+    and E.job_code = J.job_code;
+    --22
+select *
+from employee E, department D, location L, job J
+where E.dept_code = D.dept_id
+    and D.location_id = L.local_code(+)
+    and E.job_code = J.job_code;
+    --24
+
+
+--사원명, 부서명, 지역명, 직급명
+select E.emp_name, D.dept_title, L.local_name, J.job_name
+from employee E
+    left join department D
+        on E.dept_code = D.dept_id
+    left join location L
+        on D.location_id = L.local_code
+    join Job J
+        on E.job_code = J.job_code;
+        
+--직급이 대리, 과장이면서 ASIA지역에 근무하는 사원 조회
+--사번, 이름, 직급명, 부서명, 급여, 근무지역, 국가
+select emp_id, emp_name, job_name, dept_title, salary, local_name, national_code
+
+select *
+from employee; --사번, 이름, 급여 emp_id, emp_name, salary 추출
+
+select *
+from department; --부서명 dept_title 추출
+
+select * 
+from location; --근무지역 local_name 추출
+
+select * 
+from nation; --국가 national_code 추출
+
+select *
+from job; --직급명 job_name 추출
+
+select E.emp_id, E.emp_name, J.job_name, D.dept_title, E.salary, L.local_name, N.national_code
+from employee E
+    join job J
+        on E.job_code = J.job_code
+    join department D
+        on E.dept_code = D.dept_id
+    join location L
+        on D.location_id = L.local_code
+    join nation N
+        on L.national_code = N.national_code
+where J.job_name in ('대리', '과장')
+    and L.local_name like 'ASIA%';
+    
+
 
 
 
