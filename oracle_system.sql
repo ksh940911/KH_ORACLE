@@ -33,12 +33,8 @@ FROM DBA_USERS;
 create user kh
 identified by kh  --비밀번호(대소문자 구분)
 
-create user practice
-identified by practice
-
-create user test
-identified by test
-
+create user kh_practice
+identified by kh_practice
 default tablespace users; --데이터가 저장될 영역 system | users --한번 만들고 나면, 또 실행할 수 없음
 
 --사용자 삭제
@@ -58,3 +54,21 @@ grant create table to kh;
 
 --한번에 부여하기
 grant connect, resource to kh;
+
+--chun계정 생성
+create user chun
+identified by chun
+default tablespace users;
+
+--connet, resource를 부여
+grant connect, resource to chun;
+grant connect, resource to kh_practice;
+
+-- role(권한 묶음)에 포함된 권한 확인
+-- DataDictionary db의 각 객체에 대한 메타정보를 확인할 수 있는 read-only 테이블
+select *
+from dba_sys_privs
+where grantee in ('CONNECT', 'RESOURCE');
+
+--******************************************여기 다시보기
+

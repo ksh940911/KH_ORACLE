@@ -1295,7 +1295,7 @@ from employee E join job J
 select *
 from employee E, department D
 where E.dept_code = D.dept_id;
---22
+--22www
 
 select *
 from employee E, department D
