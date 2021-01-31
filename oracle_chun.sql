@@ -162,10 +162,12 @@ select round(avg(point),1) 평점
 from tb_grade
 where student_no = 'A517178';
 
---@실습문제 10 : 
+--@실습문제 10 : 학과별 학생수를 구하여 "학과번호", "학생수(명)" 의 형태로 헤더를 만들어 결과값이 출력되도록 하시오.
 
-select *
-from tb_grade;
+select department_no, count(*)
+from tb_student
+group by department_no
+order by department_no asc;
 
 --@실습문제 11 : 
 
