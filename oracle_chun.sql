@@ -12,7 +12,7 @@ select * from tb_student;
 
 -- 과목테이블
 select * from tb_class;
-wwwwwwwwww
+
 -- 교수테이블
 select * from tb_professor;
 
@@ -132,14 +132,9 @@ from tb_professor;
 --@실습문제 5 : 춘 기술대학교의 재수생 입학자를 구하려고 한다. 어떻게 찾아낼 것인가? 이때, 19 살에 입학하면 재수를 하지 않은 것으로 간주한다.
 select student_no, student_name, student_ssn, entrance_date, ((to_number(extract(year from sysdate)) - to_number('19'||substr(student_ssn,1,2))) - (to_number(extract(year from sysdate) - extract(year from entrance_date))+1))
 from tb_student
-where ((to_number(extract(year from sysdate)) - to_number('19'||substr(student_ssn,1,2))) 
-                                         -- (2021년         -             1994년) = 나이구하기(만 27살) 
-- (to_number(extract(year from sysdate) - extract(year from entrance_date))+1))
-                                         -- (2021년         -          2013학번) = 현재나이에서 뺄값(8)
-> 19
---27-8 = 19(만나이) -> 재수안하고 입학했는지 여부, 19이면 재수안한거 20이면 재수 21이면 삼수...
+where ((to_number(extract(year from sysdate)) - to_number('19'||substr(student_ssn,1,2))) - (to_number(extract(year from sysdate) - extract(year from entrance_date))+1)) > 19
 order by student_no; 
---내 접근방식 ********************||추후 question이후 보강예정||**************************--
+
 select student_no, student_name
 from tb_student
 where extract(year from entrance_date) - ('19'||substr(student_ssn,1,2)) > 19;
@@ -194,19 +189,67 @@ from tb_grade;
 select *
 from tb_grade;
 
+
+--==============================
+-- 강의 21.01.28
+--==============================
+
+--@ 강의중 예제문제: 학번/학생명/담당교수명 조회
+--0.문제에서 원하는 조회값이 있는 테이블 찾기 -- tb_student, tb_professor
+--1.두 테이블의 기준컬럼 찾기(join 시키기위해서)
+--2.on조건절에 해당되지 않는 데이터파악
+
+--1. join시키기 위해, 두 테이블에 모두 있는 값의 기준컬럼명 찾기
+select * from tb_student; -- coach_professor_no
+select * from tb_professor; -- professor_no
+
+--2. on조건절에 해당하지 않는 데이터파악
+--2-1. 교수배정을 받지 않은 학생 조회 -- 9(left)
+select count(*)
+from tb_student
+where coach_professor_no is null;
+
+--2-2. 담당학생이 한명도 없는 교수 조회 -- 1(right), P114 백혁호는 담당학생이 없다.
+--전체 교수 수 -- 114
+select count(*)
+from tb_professor;
+--중복 없는 담당교수 수 -- 113, 전체교수 수에서 이 값을 빼면 담당학생이 없는 교수의 수임
+select count(distinct coach_professor_no)
+from tb_student;
+
+
+--담당교수, 담당학생이 배정되지 않은 학생 제외 : inner 579
+select student_no, student_name, professor_name
+from tb_student S join tb_professor P
+    on S.coach_professor_no = P.professor_no;
+    
+select count(*)
+from tb_student S join tb_professor P
+    on S.coach_professor_no = P.professor_no; -- inner join시 원하는 검색조건에 맞게 데이터가 걸러져서 몇개의 행을 갖는지 알아보기위해 count했음
+
+--담당교수가 배정되지 않은 학생 포함 : left 588 = 579(inner) + 9
+select student_no, student_name, professor_name
+from tb_student S left join tb_professor P
+    on S.coach_professor_no = P.professor_no;
+
+--담당학생이 없는 교수 포함 : right 580 = 579(inner) + 1     
+select student_no, student_name, professor_name
+from tb_student S right join tb_professor P
+    on S.coach_professor_no = P.professor_no;
+    
 /*
-2021.01.28 실습문제1(1~5) 직접 풀어보기
+2021.01.28 실습문제1(1~5)
 */
 --@실습문제 1 : 학번, 학생명, 학과명 조회
 -- 학과 지정이 안된 학생은 존재하지 않는다.
 select S.student_no, S.student_name, D.department_name
 from tb_student S
     inner join tb_department D
-        on S.department_no = D.department_no;
-        
+        on S.department_no = D.department_no; --588명
+         
 select count(*)
 from tb_student
-where department_no is null;
+where department_no is null; --학과 지정이 안된 학생이 있는지 확인해보고싶을때, 학과 지정이 안된 학생은 존재하지 않는다.
 
 --@실습문제 2 : 수업번호, 수업명, 교수번호, 교수명 조회
 select C.class_no, C.class_name, P.professor_no, P.professor_name
@@ -214,11 +257,10 @@ from tb_class_professor CP
     join tb_class C
         on CP.class_no = C.class_no
     join tb_professor P
-        on P.professor_no = CP.professor_no;
-
+        on P.professor_no = CP.professor_no; --776개
 
 --@실습문제 3 : 송박선 학생의 모든 학기 과목별 점수를 조회(학기, 학번, 학생명, 수업명, 점수)
-select G.term_no, student_no, S.student_name, C.class_name, G.point
+select G.term_no, student_no, S.student_name, C.class_name, G.point --S.student_no 사용불가, using에 사용된 컬럼은 별칭으로 쓸수없다.
 from tb_grade G
     join tb_student S
         using(student_no)
@@ -232,7 +274,7 @@ select student_no, student_name, trunc(avg(point), 1) avg
 from tb_grade G
     join tb_student S
         using(student_no)
-group by student_no, student_name;
+group by student_no, student_name; --588명
 
 --@실습문제 5 : 교수번호, 교수명, 담당학생명수 조회
 -- 단, 5명 이상을 담당하는 교수만 출력
@@ -242,42 +284,4 @@ from tb_student S
         on S.coach_professor_no = P.professor_no
 group by P.professor_no, P.professor_name
 having count(*) >= 5
-order by cnt desc;
-
-
---==============================
--- 강의 21.01.28
---==============================
-
---@ 강의중 예제문제: 학번/학생명/담당교수명 조회
---1.두 테이블의 기준컬럼 찾기
---2.on조건절에 해당되지 않는 데이터파악
-
-select * from tb_student; -- coach_professor_no
-select * from tb_professor; -- professor_no
-
---담당교수, 담당하가생이 배정되지 않은 학생 제외 : inner 579
---담당교수가 배정되지 않은 학생 포함 : left 588 = 579 + 9
---담당학생이 없는 교수 포함 : right 580 = 579 + 10 
-
-select student_no, student_name, professor_name
-from tb_student S join tb_professor P
-    on S.coach_professor_no = P.professor_no;
-    
-select count(*)
-from tb_student S join tb_professor P
-    on S.coach_professor_no = P.professor_no;
-
---1. 교수배정을 받지 않은 학생 조회 -- 9
-select count(*)
-from tb_student
-where coach_professor_no is null;
-
---2. 담당학생이 한명도 없는 교수 조회 -1
---전체 교수 수 -- 114
-select count(*)
-from tb_professor;
-
---중복 없는 담당교수 수 -- 113
-select count(distinct coach_professor_no)
-from tb_student;
+order by cnt desc; --68명  
