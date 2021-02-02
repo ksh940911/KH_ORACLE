@@ -1295,7 +1295,7 @@ from employee E join job J
    --제외된것 없음
 
 
---Oracle Ver.
+--Oracle Ver. ---------------------------------------------------------------------------05:35:00부터
 select *
 from employee E, department D
 where E.dept_code = D.dept_id;
@@ -1435,13 +1435,13 @@ where E1.manager_id = E2.emp_id;
     
 
 --=====================================
--- MULTIPLE JOIN 02:30:40부터
+-- MULTIPLE JOIN 
 --=====================================
 --다중조인
 --한번에 좌우 두 테이블씩 조인하여 3개이상의 테이블을 연결함
 
---사원명, 부서명, 지역명 조회
-
+--송종기사원의 사원명, 부서명, 지역명 조회
+--각테이블에서 연결시킬 기준컬럼 찾기
 select * from employee; --E.dept_code
 select * from department; --D.dept_id, D.location_id
 select * from location; --L.local_code
@@ -1452,24 +1452,31 @@ from employee E
         on E.dept_code = D.dept_id
     join location L
         on D.location_id = L.local_code
-where E.emp_name = '송종기'; --송종기 사원의 부서명, 지역명 테이블 연결후 한번에 검색
+where E.emp_name = '송종기'; --employee와 department 테이블 연결후 location 테이블 연결한 뒤 송종기 사원의 사원명, 부서명, 지역명 한번에 검색, 여기서 주의할점은 연결순서임. employee와 location은 연결시킬수 있는 공통컬럼이 없어서 employee와 department를 먼저 연결시킨후 차례로 연결시켜야한다!!!!
+--조인하는 순서를 잘 고려할 것
 
+--사원들의 사원명, 부서명, 지역명 조회(인턴제외)
 select E.emp_name, D.dept_title, L.local_name
 from employee E
-    left join department D
+    join department D
         on E.dept_code = D.dept_id
-    left join location L
-        on D.location_id = L.local_code;
+    join location L
+        on D.location_id = L.local_code; --22행이 나오는데, 원래 전체행은 24행임(인턴사원들 빠졌음)
         
 --select E.emp_name, D.dept_title, L.local_name
 --from employee E
 --    left join department D
 --        on E.dept_code = D.dept_id
 --    join location L
---        on D.location_id = L.local_code; --데이터누락됨
+--        on D.location_id = L.local_code; --인턴들 데이터에 포함시키려면 left join을 쓰면 되는데 employee와 department합칠때만 left join 써주니까 데이터누락되어 22행만 나옴        
 
---조인하는 순서를 잘 고려할 것
---left join으로 시작했으면, 끝까지 유지해줘야 데이터가 누락되지 않는 경우가 있다.
+--사원들의 사원명, 부서명, 지역명 조회(인턴포함)
+select E.emp_name, D.dept_title, L.local_name
+from employee E
+    left join department D
+        on E.dept_code = D.dept_id
+    left join location L
+        on D.location_id = L.local_code; --left join을 써주려면 끝까지 left join을 써줘야 원래 의도했던대로 데이터누락없이 인턴들까지 데이터에 포함되어 24행이 잘나온다! location테이블과 합칠때 그냥 join을 쓸경우 합치는 기준컬럼의 값이 null이라서 또 제외되기 때문!
 
 
 --Oracle Ver.
@@ -1487,7 +1494,19 @@ where E.dept_code = D.dept_id
     --24
 
 
---사원명, 부서명, 지역명, 직급명
+--사원들의 사원명, 부서명, 지역명, 직급명 조회
+select *
+from job; --직급명을 구하기 위한 테이블, job_code를 join시 기준컬럼으로 사용해서 job_name(직급명)을 가져오면 될듯
+
+select E.emp_name, D.dept_title, L.local_name, J.job_name
+from employee E
+    join Job J --job테이블은 employee테이블과 합칠때 J1~7까지 누락되는 행이 없기 때문에 left join을 굳이 안써줘도 되고 employee테이블과 먼저 합쳐지든 다른테이블과 합쳐지고 온후에 합쳐지든 위치가 상관없다. 어쨋든 job_code를 employee테이블의 job_code와 연결시키면 되기때문!
+        on E.job_code = J.job_code
+    left join department D
+        on E.dept_code = D.dept_id
+    left join location L
+        on D.location_id = L.local_code; 
+
 select E.emp_name, D.dept_title, L.local_name, J.job_name
 from employee E
     left join department D
@@ -1495,28 +1514,28 @@ from employee E
     left join location L
         on D.location_id = L.local_code
     join Job J
-        on E.job_code = J.job_code;
+        on E.job_code = J.job_code; --employee테이블이 다른테이블과 합쳐지고 난후에 합쳐져도 상관없다.
         
 --직급이 대리, 과장이면서 ASIA지역에 근무하는 사원 조회
 --사번, 이름, 직급명, 부서명, 급여, 근무지역, 국가
-select emp_id, emp_name, job_name, dept_title, salary, local_name, national_code
+--select할 컬럼명 : emp_id, emp_name, job_name, dept_title, salary, local_name, national_name
 
 select *
-from employee; --사번, 이름, 급여 emp_id, emp_name, salary 추출
+from employee; --사번, 이름, 급여 emp_id, emp_name, salary 추출 / 다른테이블과 붙일때 필요한 기준컬럼 : job_code, dept_code
 
 select *
-from department; --부서명 dept_title 추출
+from department; --부서명 dept_title 추출 / 다른테이블과 붙일때 필요한 기준컬럼 : dept_id, location_id
 
 select * 
-from location; --근무지역 local_name 추출
+from location; --근무지역 local_name 추출 / 다른테이블과 붙일때 필요한 기준컬럼 : local_code, national_code
 
 select * 
-from nation; --국가 national_code 추출
+from nation; --국가 national_name 추출 / 다른테이블과 붙일때 필요한 기준컬럼 : national_code
 
 select *
-from job; --직급명 job_name 추출
+from job; --직급명 job_name 추출 / 다른테이블과 붙일때 필요한 기준컬럼 : job_code
 
-select E.emp_id, E.emp_name, J.job_name, D.dept_title, E.salary, L.local_name, N.national_code
+select E.emp_id, E.emp_name, J.job_name, D.dept_title, E.salary, L.local_name, N.national_name
 from employee E
     join job J
         on E.job_code = J.job_code
@@ -1526,8 +1545,7 @@ from employee E
         on D.location_id = L.local_code
     join nation N
         on L.national_code = N.national_code
-where J.job_name in ('대리', '과장')
-    and L.local_name like 'ASIA%';
+where J.job_name in ('대리', '과장') and L.local_name like 'ASIA%';
     
     
 --=====================================
