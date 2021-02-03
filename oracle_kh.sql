@@ -1295,7 +1295,7 @@ from employee E join job J
    --제외된것 없음
 
 
---Oracle Ver. ---------------------------------------------------------------------------05:35:00부터
+--Oracle Ver. 
 select *
 from employee E, department D
 where E.dept_code = D.dept_id;
@@ -1405,7 +1405,7 @@ from employee E cross join (select trunc(avg(salary)) avg
 
 --Oracle Ver.
 select *
-from employee E, department D;
+from employee E, department D; --where절을 안써주면 됨
 
                                         
 --=====================================
@@ -1425,11 +1425,7 @@ from employee E1 join employee E2
     
     
 --Oracle Ver.
-select E1.emp_id, E1.emp_name, E1.manager_id, E2.emp_id, E2.emp_name
-from employee E1, employee E2
-where E1.manager_id = E2.emp_id;
-
-select *
+select E1.emp_id, E1.emp_name, E2.emp_id, E2.emp_name
 from employee E1, employee E2
 where E1.manager_id = E2.emp_id;
     
@@ -1478,22 +1474,6 @@ from employee E
     left join location L
         on D.location_id = L.local_code; --left join을 써주려면 끝까지 left join을 써줘야 원래 의도했던대로 데이터누락없이 인턴들까지 데이터에 포함되어 24행이 잘나온다! location테이블과 합칠때 그냥 join을 쓸경우 합치는 기준컬럼의 값이 null이라서 또 제외되기 때문!
 
-
---Oracle Ver.
-select *
-from employee E, department D, location L, job J
-where E.dept_code = D.dept_id
-    and D.location_id = L.local_code
-    and E.job_code = J.job_code;
-    --22
-select *
-from employee E, department D, location L, job J
-where E.dept_code = D.dept_id
-    and D.location_id = L.local_code(+)
-    and E.job_code = J.job_code;
-    --24
-
-
 --사원들의 사원명, 부서명, 지역명, 직급명 조회
 select *
 from job; --직급명을 구하기 위한 테이블, job_code를 join시 기준컬럼으로 사용해서 job_name(직급명)을 가져오면 될듯
@@ -1515,7 +1495,23 @@ from employee E
         on D.location_id = L.local_code
     join Job J
         on E.job_code = J.job_code; --employee테이블이 다른테이블과 합쳐지고 난후에 합쳐져도 상관없다.
-        
+
+
+--Oracle Ver.
+select *
+from employee E, department D, location L, job J
+where E.dept_code = D.dept_id
+    and D.location_id = L.local_code
+    and E.job_code = J.job_code; --oracle문법에서는 조인하는 순서가 1도 안중요함. 그냥 계속 나열하면됨 --05:53:39**************************************************
+    --22
+select E.emp_name, D.dept_title, L.local_name, J.job_name
+from employee E, department D, location L, job J
+where E.dept_code = D.dept_id
+    and D.location_id = L.local_code(+)
+    and E.job_code = J.job_code;
+    --24
+
+                
 --직급이 대리, 과장이면서 ASIA지역에 근무하는 사원 조회
 --사번, 이름, 직급명, 부서명, 급여, 근무지역, 국가
 --select할 컬럼명 : emp_id, emp_name, job_name, dept_title, salary, local_name, national_name
@@ -2310,13 +2306,4 @@ from employee;
 
 
 --3. 분석함수
-
-
-
-
-
-
-
-
-
 
