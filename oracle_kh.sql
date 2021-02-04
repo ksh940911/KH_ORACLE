@@ -1458,15 +1458,15 @@ from employee E
         on E.dept_code = D.dept_id
     join location L
         on D.location_id = L.local_code; --22행이 나오는데, 원래 전체행은 24행임(인턴사원들 빠졌음)
-        
+
+--사원들의 사원명, 부서명, 지역명 조회(인턴포함)
 --select E.emp_name, D.dept_title, L.local_name
 --from employee E
 --    left join department D
 --        on E.dept_code = D.dept_id
 --    join location L
---        on D.location_id = L.local_code; --인턴들 데이터에 포함시키려면 left join을 쓰면 되는데 employee와 department합칠때만 left join 써주니까 데이터누락되어 22행만 나옴        
+--        on D.location_id = L.local_code; --인턴들 데이터에 포함시키려면 left join을 쓰면 되는데 employee와 department합칠때만 left join 써주니까 데이터누락되어 22행만 나옴    
 
---사원들의 사원명, 부서명, 지역명 조회(인턴포함)
 select E.emp_name, D.dept_title, L.local_name
 from employee E
     left join department D
@@ -1502,16 +1502,16 @@ select *
 from employee E, department D, location L, job J
 where E.dept_code = D.dept_id
     and D.location_id = L.local_code
-    and E.job_code = J.job_code; --oracle문법에서는 조인하는 순서가 1도 안중요함. 그냥 계속 나열하면됨 --05:53:39**************************************************
+    and E.job_code = J.job_code; --oracle문법에서는 조인하는 순서가 1도 안중요함. 그냥 계속 나열하면됨 
     --22
 select E.emp_name, D.dept_title, L.local_name, J.job_name
 from employee E, department D, location L, job J
-where E.dept_code = D.dept_id
+where E.dept_code = D.dept_id(+)
     and D.location_id = L.local_code(+)
     and E.job_code = J.job_code;
     --24
 
-                
+
 --직급이 대리, 과장이면서 ASIA지역에 근무하는 사원 조회
 --사번, 이름, 직급명, 부서명, 급여, 근무지역, 국가
 --select할 컬럼명 : emp_id, emp_name, job_name, dept_title, salary, local_name, national_name
@@ -1542,6 +1542,13 @@ from employee E
     join nation N
         on L.national_code = N.national_code
 where J.job_name in ('대리', '과장') and L.local_name like 'ASIA%';
+
+
+--Oracle Ver.
+select E.emp_id, E.emp_name, J.job_name, D.dept_title, E.salary, L.local_name, N.national_name
+from employee E, job J, department D, location L, nation N
+where E.job_code = J.job_code and E.dept_code = D.dept_id and D.location_id = L.local_code and L.national_code = N.national_code 
+         and J.job_name in('대리', '과장') and L.local_name like 'ASIA%';
     
     
 --=====================================
@@ -1897,9 +1904,9 @@ where E.salary > EA.avg
 order by job_code;
 --join으로 처리(방법1)
 
-select *
-from employee E
-where salary > (직급별 평균급여);
+--select *
+--from employee E
+--where salary > (직급별 평균급여);
 
 select *
 from employee E
@@ -2303,7 +2310,493 @@ from employee;
 select emp_name, dept_code, count(*) over(partition by dept_code) cnt_by_dept
 from employee;
 
+--3. 분석함수는 안배움
 
 
---3. 분석함수
+--=====================================
+-- DML
+--===================================== 
+-- Data Manipulation language 데이터 조작어
+-- CRUD(Create, Read or Retrieve, Update, Delete) 테이블 행에 대한 명령어
+-- insert 행추가
+-- update 행수정
+-- delete 행삭제
+-- select (DQL)
+
+--=====================================
+-- INSERT
+--===================================== 
+-- 1. insert into 테이블 values(컬럼1값, 컬럼2값, ...) 모든 컬럼을 빠짐없이 순서대로 작성해야 함
+-- 2. insert into 테이블 (컬럼1, 컬럼2, ...) values(컬럼1값, 컬럼2값, ...) 컬럼은 생략가능, 컬럼순서도 자유롭다. but, not null컬럼이면서, 기본값이 없다면 생략이 불가하다.
+
+create table dml_sample(id number, nick_name varchar2(100) default '홍길동', name varchar2(100) not null, enroll_date date default sysdate not null);
+
+select * from dml_sample; --dml_sample 조회
+
+--타입1
+insert into dml_sample values (100, default, '신사임당', default);
+
+--insert into dml_sample values (100, default, '신사임당'); -- SQL 오류: ORA-00947: not enough values
+
+--insert into dml_sample values (100, default, '신사임당', default, 'ㅋㅋ');-- SQL 오류: ORA-00913: too many values
+
+--타입2
+insert into dml_sample (id, nick_name, name, enroll_date) values(200, '제임스', '이황', sysdate);
+
+insert into dml_sample (name, enroll_date) values('세종', sysdate);--nullable한 컬럼은 생략가능하다. 기본값이 있다면, 기본값이 적용된다.
+
+--not null이면서 기본값이 지정안된 경우 생략할 수 없다.
+--insert into dml_sample (id, enroll_date) values(300, sysdate);-- ORA-01400: cannot insert NULL into ("KH"."DML_SAMPLE"."NAME")
+
+insert into dml_sample (name) values('윤봉길');
+
+--서브쿼리를 이용한 insert
+
+create table emp_copy 
+as
+select * 
+from employee
+where 1 = 2; -- 테이블 구조만 복사해서 테이블을 생성
+
+select * 
+from emp_copy;
+
+insert into emp_copy (select * 
+                              from employee);
+rollback;       
+
+insert into emp_copy(emp_id, emp_name, emp_no, job_code, sal_level)(select emp_id, emp_name, emp_no, job_code, sal_level
+                                                                                              from employee);
+                                                                                              
+--emp_copy데이터 추가
+select * 
+from emp_copy;
+
+--기본값 확인 data_default
+select *
+from user_tab_cols
+where table_name = 'EMP_COPY';
+
+--기본값 추가
+alter table emp_copy
+modify quit_yn default 'N'
+modify hire_date default sysdate;
+
+--insert into emp_copy (emp_id, emp_name, emp_no, email, phone, dept_code, job_code, sal_level, salary 강사공유로 복붙하기
+
+--insert all을 이용한 여러테이블에 동시에 데이터 추가
+--서브쿼리를 이용해서 2개이상의 테이블에 동시에 데이터를 추가한다. 조건부 추가도 가능하다.
+--입사일 관리 테이블
+create table emp_hire_date
+as
+select emp_id, emp_name, hire_date
+from employee
+where 1 = 2;
+
+--매니져 관리 테이블
+create table emp_manager
+as
+select emp_id, emp_name, manager_id, emp_name manager_name
+from employee
+where 1 = 2; --false를 만들어서 컬럼명은 가져오되 컬렴값은 가져오지 않겠다! 다시보기로 정확히 알아보기
+
+select * from emp_hire_date;
+select * from emp_manager;
+
+--manager_name을 null로 변경
+alter table emp_manager
+modify manager_name null;
+
+-- from테이블과 to테이블의 컬럼명이 같아야한다.
+insert all
+into emp_hire_date values(emp_id, emp_name, hire_date)
+into emp_manager values(emp_id, emp_name, manager_id, manager_name)
+select E.*, (select emp_name from employee where emp_id = E.manager_id) manager_name
+from employee E;
+
+--insert all을 이용한 여러행 한번에 추가하기
+--오라클은 다음 문법을 지원하지 않는다.
+--insert into dml_sample values(1, '치킨', '홍길동'), (2, '고구마, '장발장'), (3, '베베', '유관순'); -- 이런문법은 없음 SQL 오류: ORA-00933: SQL command not properly ended
+
+insert all 
+into dml_sample values(1, '치킨', '홍길동', default) 
+into dml_sample values(2, '고구마', '장발장', default) 
+into dml_sample values(3, '베베', '유관순', default)
+select * from dual; --더미 쿼리
+
+
+--=====================================
+-- UPDATE
+--===================================== 
+--update실행후에 행의 수에는 변화가 없다.
+--0행, 1행이상을 동시에 수정한다.   
+--dml 처리된 행의 수를 반환
+--drop table emp_copy;
+create table emp_copy
+as
+select *
+from employee;
+
+select * from emp_copy;
+
+update emp_copy
+set dept_code = 'D7', job_code = 'J3' --emp_id가 '202'인 데이터'D9', 'J2'를 'D7', 'J3'으로 바꿔줌
+where emp_id = '202'; --1 행 이(가) 업데이트되었습니다.
+--where emp_id = '2002'; 0개 행 이(가) 업데이트되었습니다.
+
+--commit; --메모리상 변경내역을 실제파일에 저장, 커밋하면 롤백해도 안돌아가짐
+rollback; --마지막 커밋시점으로 돌리기, 다시 'D9', 'J2'로 돌아감
+
+update emp_copy
+set salary = salary + 500000 --다만 +=, -=같은 복합대입연산자는 사용불가
+where dept_code = 'D5'; --D5부서원의 salary를 50만원 추가해주기!
+
+--서브쿼리를 이용한 update
+--방명수 사원의 급여를 유재식사원과 동일하게 수정해라(1380000->3400000)
+update emp_copy
+set salary = (select salary from emp_copy where emp_name = '유재식')
+where emp_name = '방명수';
+
+--임시환 사원의 직급을 과장(J5), 부서를 해외영업3부(D7)로 수정하세요.
+--emp_copy
+update emp_copy
+set job_code = (select job_code from job where job_name = '과장'), dept_code = (select dept_id from department where dept_title = '해외영업3부')
+where emp_name = '임시환';
+
+--commit; --단축키 : f11
+--rollback; --단축키 : f12
+
+
+--=====================================
+-- DELETE
+--===================================== 
+select * from emp_copy;
+
+delete from emp_copy
+where emp_id = '211'; --211번 전형돈 사원을 삭제시켜라, || 주의사항!! where절을 안쓰고 delete from emp_copy에서 실행시키면 24개행 다날라감!! 웬만하면 where절을 반드시 쓰고 delete update같은거는 주석처리해놓기 f5로 전체실행시켰을때 큰일나는수가 있음
+rollback;
+
+
+--=====================================
+-- TRUNCATE
+--===================================== 
+--테이블의 행을 자르는 명령.
+--DDL 명령어. 자동커밋함. 되돌릴수 없다!!
+--before image생성 작업이 없(임시저장같은게 없다는것)으므로, 실행속도가 빠름
+
+truncate table emp_copy; --Table EMP_COPY이(가) 잘렸습니다.
+
+select * from emp_copy; --컬럼명 빼고 데이터 다 날라갓음. 롤백 아무리 해봐도 돌아오지않음
+
+insert into emp_copy(select * from employee); --다시 데이터 넣어주기
+
+
+--=====================================
+-- DDL
+--===================================== 
+--Data Definition Language 데이터 정의어
+--데이터베이스 객체를 생성/수정/삭제할 수 있는 명령어 모음
+--create
+--alter
+--drop
+--truncate
+
+--객체 종류(우리가 앞으로 배울것들)
+--table, view, sequence, index, package, procedure, function, trigger, synonym, scheduler, user...
+
+
+--주석 comment
+--테이블, 컬럼에 대한 주석을 달 수 있다. (필수)
+select *
+from user_tab_comments; --테이블의 설명 조회가능
+
+select *
+from user_col_comments
+where table_name = 'EMPLOYEE'; --EMPLOYEE의 컬럼에 대한 설명 조회가능
+
+select *
+from user_col_comments
+where table_name = 'DEPARTMENT'; --DEPARTMENT의 컬럼에 대한 설명 조회가능
+
+select *
+from user_col_comments
+where table_name = 'TBL_FILES';
+desc tbl_files;
+
+--테이블 주석
+comment on table tbl_files is '파일경로테이블';
+
+--컬럼 주석
+comment on column tbl_files.fileno is '파일 고유번호';
+comment on column tbl_files.filepath is '파일 경로';
+
+--수정/삭제 명령은 없다. 
+--수정은 덮어쓰면됨 삭제는 .... is ''; '(작은따옴표)안에 아무것도 안채우면 null과 동일하게 봐서 삭제시킨 효과발생
+
+--=====================================
+-- 제약조건 CONSTRAINT
+--===================================== 
+--테이블 생성 수정시 컬럼값에 대한 제약조건 설정할 수 있다.
+--데이터에 대한 무결성 INTEGRITY을 보장하기 위한 것
+--무결성은 데이터를 정확하고, 일관되게 유지하는것
+
+/*
+1. not null : null을 허용하지 않음. 필수값
+2. unique : 중복값을 허용하지 않음.
+3. primary key : not null + unique 레코드(행)에대한 식별자로써, 테이블당 1개 허용
+4. foreign key : 외래키, 데이터 참조무결성 보장. 부모테이블의 데이터만 허용
+5. check : 저장가능한 값의 범위/조건을 제한
+
+일절 허용하지 않음. 49개컬럼은 들어가고 1개컬럼은 안들어가고 이런게 아님. 아예 reject거절됨
+*/
+
+--제약 조건 확인
+--user_constraints(컬럼명이 없음)
+--user_cons_columns
+
+select *
+from user_constraints
+where table_name = 'EMPLOYEE';
+
+--C check | not null : search_condition까지 확인해야 check인지 not null인지 알수있다.
+--U unique
+--P primary key
+--R foreign key
+
+--제약조건 검색
+select *
+from user_cons_columns
+where table_name = 'EMPLOYEE';
+
+--제약조건 검색
+select constraint_name, uc.table_name, ucc.column_name, uc.constraint_type, uc.search_condition
+from user_constraints uc
+    join user_cons_columns ucc
+        using(constraint_name)
+where uc.table_name = 'EMPLOYEE';        
+
+--=====================================
+-- NOT NULL
+--===================================== 
+--필수입력 컬럼에 not null 제약조건을 지정한다.
+--default값 다음에 컬럼레벨에 작성한다.
+--보통 제약조건명을 지정하지 않는다.
+create table tb_cons_nn (
+    id varchar2(20) not null, --컬럼레벨
+    name varchar2(100)); --테이블레벨
+    
+insert into tb_cons_nn values(null, '홍길동'); --ORA-01400: cannot insert NULL into ("KH"."TB_CONS_NN"."ID")
+insert into tb_cons_nn values('honggd', '홍길동');
+
+select * from tb_cons_nn;
+update tb_cons_nn
+set id = ''
+where id = 'honggd'; --ORA-01407: cannot update ("KH"."TB_CONS_NN"."ID") to NULL
+
+--=====================================
+-- UNIQUE
+--===================================== 
+--이메일, 주민번호, 닉네임 (전화번호는 최근에는 안넣음)
+--전화번호는 UQ 사용하지 말것. 번호바꿨는데 나중에 이번호 GET한 사람이 회원가입하려고 할때 가입이 안되는 상황발생!
+--중복 허용하지 않음
+create table tb_cons_uq(
+    no number not null, 
+    email varchar2(50), --테이블레벨
+    constraint uq_email unique(email));
+    
+insert into tb_cons_uq values(1, 'abc@naver.com');
+insert into tb_cons_uq values(2, '가나다@naver.com');
+--insert into tb_cons_uq values(3, 'abc@naver.com'); --ORA-00001: unique constraint (KH.UQ_EMAIL) violated
+insert into tb_cons_uq values(4, null); --널값은 허용한다.
+
+select * from tb_cons_uq;
+
+
+--=====================================
+-- PRIMARY KEY
+--===================================== 
+--레코드(행) 식별자
+--not null + unique기능을 가지고 있으며, 테이블당 한개만 설정 가능
+
+create table tb_cons_pk(
+    id varchar2(50), 
+    name varchar2(100) not null,
+    email varchar2(200),
+    constraint pk_id primary key(id),
+    constraint uq_email2 unique(email)
+);
+
+insert into tb_cons_pk
+values('honggd', '홍길동', 'hgd@google.com');
+
+insert into tb_cons_pk
+values(null, '홍길동', 'hgd@google.com'); --ORA-01400: cannot insert NULL into ("KH"."TB_CONS_PK"."ID")
+
+select * from tb_cons_pk; --ORA-00001: unique constraint (KH.PK_ID) violated
+
+
+select constraint_name, uc.table_name, ucc.column_name, uc.constraint_type, uc.search_condition
+from user_constraints uc
+    join user_cons_columns ucc
+        using(constraint_name)
+where uc.table_name = 'TB_CONS_PK';
+
+--복합 기본키(주키 | primark key | pk)
+--여러컬럼을 조합해서 하나의 PK로 사용.
+--사용된 컬럼 하나라도 NULL이여서는 안된다.
+create table tb_order_pk (
+    user_id varchar2(50),
+    order_date date,
+    amount number default 1 not null,
+    constraint pk_user_id_order_date primary key(user_id, order_date)
+);
+
+insert into tb_order_pk
+values('honggd', sysdate, 3); --데이터 계속 삽입됨. 초단위로 엄청빠르게 삽입시도하지않는이상 ORA-00001: unique constraint (KH.PK_USER_ID_ORDER_DATE) violated 이런 에러코드 뜨지않음
+
+insert into tb_order_pk
+values(null, sysdate, 3); --ORA-01400: cannot insert NULL into ("KH"."TB_ORDER_PK"."USER_ID")
+
+select user_id, to_char(order_date, 'yyyy/mm/dd hh24:mi:ss') order_date, amount
+from tb_order_pk;
+
+
+--=====================================
+-- FOREIGN KEY
+--===================================== 
+--참조무결성을 유지하기 위한 조건
+--참조하고 있는 부모테이블의 지정 컬럼값 중에서만 값을 취할 수 있게 하는 것
+--참조하고 있는 부모테이블의 지정컬럼은 PK, UQ제약조건이 걸려있어야 한다.
+--department.dept_id(부모테이블) <-------------- employee.dept_code(자식테이블)
+--자식테이블의 컬럼에 외래키(foreign key) 제약조건을 지정
+
+create table shop_member(
+    member_id varchar2(20),
+    member_name varchar2(30) not null,
+    constraint pk_shop_member_id primary key(member_id)
+);
+
+select constraint_name, uc.table_name, ucc.column_name, uc.constraint_type, uc.search_condition
+from user_constraints uc
+    join user_cons_columns ucc
+        using(constraint_name)
+where uc.table_name = 'TB_CONS_PK';
+
+
+insert into shop_member values('honggd', '홍길동');
+insert into shop_member values('sinsa', '신사임당');
+insert into shop_member values('sejong', '세종대왕');
+
+select * from shop_member;
+
+create table shop_buy (
+    buy_no number,
+    member_id varchar2(20),
+    product_id varchar2(50),
+    buy_date date default sysdate,
+    constraints pk_shop_buy_no primary key(buy_no),
+    constraints fk_shop_buy_member_id foreign key(member_id) references shop_member(member_id)
+);
+
+--drop table shop_buy;
+create table shop_buy (
+    buy_no number,
+    member_id varchar2(20),
+    product_id varchar2(50),
+    buy_date date default sysdate,
+    constraints pk_shop_buy_no primary key(buy_no),
+    constraints fk_shop_buy_member_id foreign key(member_id) references shop_member(member_id) on delete set null
+);
+
+--drop table shop_buy;
+create table shop_buy (
+    buy_no number,
+    member_id varchar2(20),
+    product_id varchar2(50),
+    buy_date date default sysdate,
+    constraints pk_shop_buy_no primary key(buy_no),
+    constraints fk_shop_buy_member_id foreign key(member_id) references shop_member(member_id) on delete cascade
+);
+
+insert into shop_buy
+values(1, 'honggd', 'soccer_shoes', default);
+
+insert into shop_buy
+values(2, 'sinsa', 'bascketball_shoes', default);
+
+insert into shop_buy
+values(3, 'k12345', 'football_shoes', default); --ORA-02291: integrity constraint (KH.FK_SHOP_BUY_MEMBER_ID) violated - parent key not found
+
+select * from shop_buy;
+
+--fk기준으로 join -> relation
+--구매번호 회원아이디 회원이름 구매물품아이디 구매시각
+select B.buy_no, member_id, M.member_name, B.product_id, B.buy_date
+from shop_member M
+    join shop_buy B
+        using(member_id);
+
+--데이터베이스의 정규화(Normalization)
+--데이터를 굳이 나눠서 관리하는 이유 : 이상현상 방지(anormaly), 데이터가 2000개라고 했을때 1개 오류시에 2000개를 다 바꿔줘야 하지만 나눠서 관리할경우 손볼 양이 확 줄어듬. 오류난 쪽만 손보면되니까!
+select *
+from employee;
+
+select *
+from department;
+
+--삭제옵션
+--on delete restricted : 기본값, 참조하는 자식행이 있는 경우, 부모행 삭제불가 / 자식행을 먼저 삭제후, 부모행을 삭제해야함
+--on delete set null : 부무행 삭제시 자식컬럼은 null로 변경
+--on delete cascade : 부모행 삭제시 자식행 삭제
+--delete from shop_member
+--where member_id = 'honggd'; --ORA-02292: integrity constraint (KH.FK_SHOP_BUY_MEMBER_ID) violated - child record found --부모행 삭제불가
+
+delete from shop_buy
+where member_id = 'honggd'; --자식행 먼저삭제
+delete from shop_member
+where member_id = 'honggd'; --부모행 삭제
+
+select * from shop_member; --잘지워짐
+select * from shop_buy; --잘지워짐
+
+--식별관계 | 비식별관계
+--식별관계 : 참조하고 있는 부모컬럼값을 다시 PK로 사용하는 경우. 부모행 - 자식행사이에 1:1 관계가 만들어짐 (중복불가)
+--비식별관계 : 참조하고 있는 부모컬럼값을 PK로 사용하지 않는 경우. 부모행 - 자식행사이에 1:N 관계가 만들어짐. 여러행에서 참조가 가능(중복가능)
+
+create table shop_nickname(
+    member_id varchar2(20),
+    nickname varchar2(100),
+    constraint fk_member_id foreign key(member_id) references shop_member(member_id),
+    constraint pk_member_id primary key(member_id)
+);
+
+insert into shop_nickname
+values('sinsa', '신솨112');
+
+select *
+from shop_nickname;
+
+
+--=====================================
+-- CHECK
+--===================================== 
+--해당 컬럼의 값의 범위를 지정.
+--null 입력 가능
+
+create table tb_cons_ck(
+    gender char(1),
+    num number,
+    constraint ck_gender check(gender in ('M', 'F')),
+    constraint ck_num check(num between 0 and 100)
+);
+
+insert into tb_cons_ck values('M', 50);
+insert into tb_cons_ck values('F', 100);
+insert into tb_cons_ck values('m', 50); --ORA-02290: check constraint (KH.CK_GENDER) violated / 대소문자 구분하니까 m은 M이나 F가 아니라서 안됨
+insert into tb_cons_ck values('M', 1000); --ORA-02290: check constraint (KH.CK_NUM) violated / 1000은 0~100사이 숫자가 아니라서 안됨
+
+
+
+
+
 
