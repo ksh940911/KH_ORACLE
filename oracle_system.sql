@@ -70,5 +70,9 @@ select *
 from dba_sys_privs
 where grantee in ('CONNECT', 'RESOURCE');
 
---******************************************여기 다시보기
+
+--create view권한 부여
+--resource롤에 포함되지 않는다.
+grant create view to kh;
+
 
