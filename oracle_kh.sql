@@ -1250,21 +1250,21 @@ from employee E join job J --from에서 별칭을 만들었으면 테이블명 �
 
 --equi-join 종류
 /*
-1. inner join 교집합 (두 테이블의 공통된 부분만 추려냄)
+. inner join 교집합 (두 테이블의 공통된 부분만 추려냄)
 
-2. outer join 합집합
+. outer join 합집합
     - left outer join 좌측테이블 기준 합집합
     - right outer join 우측테이블 기준 합집합
     - full outer join 양테이블 기준 합집합
 
-3. cross join
+. cross join
     두테이블간의 조인할 수 있는 최대 경우의 수를 표현
     (행과 행이 만날 수 있는 모든 경우를 보여줌)
 
-4. self join
+. self join
     같은 테이블의 조인
 
-5. multiple join
+. multiple join
     3개 이상의 테이블을 조인
 */
 
@@ -1564,13 +1564,12 @@ select * from sal_grade;
 select *
 from employee E
     join sal_grade S
-        on E.salary between S.min_sal and S.max_sal;
-        
---조인조건절에 따라 1행에 여러행이 연결된 결과가 얻을수 있다.
+        on E.salary between S.min_sal and S.max_sal; --E테이블의 Salary컬럼값이 S테이블의 min_sal컬럼값~max_sal컬럼값에 포함되면 붙여라
+          
 select *
 from employee E
     join department D
-        on E.dept_code != D.dept_id
+        on E.dept_code != D.dept_id --조인조건절에 따라 한 행에 여러행이 연결된 결과를 얻을수 있다.
 order by E.emp_id, D.dept_id;
 
 
@@ -1699,14 +1698,14 @@ where emp_id = (select manager_id
 /*
 
 리턴값의 개수에 따른 분류
-1. 단일행 단일컬럼 서브쿼리
-2. 다중행 단일컬럼 서브쿼리
-3. 다중열 서브쿼리(단일행/다중행)
+. 단일행 단일컬럼 서브쿼리
+. 다중행 단일컬럼 서브쿼리
+. 다중열 서브쿼리(단일행/다중행)
 
-4. 상관 서브쿼리 <-----> 일반서브쿼리
-5. 스칼라 서브쿼리 (select절 사용)
+. 상관 서브쿼리 <-----> 일반서브쿼리
+. 스칼라 서브쿼리 (select절 사용)
 
-6. inline-view (from절 사용)
+. inline-view (from절 사용)
 
 */
 
@@ -2267,10 +2266,10 @@ where rnum between 6 and 10;
 /*
 window_function(args) over ([partition by절][order by절][windowing절])
 
-1. args : 윈도우함수 인자 0 ~ n개 지정
-2. partition by절 : 그룹핑 기준 컬럼
-3. order by절 : 정렬기준 컬럼
-4. windowing절 : 처리할 행의 범위를 지정.
+. args : 윈도우함수 인자 0 ~ n개 지정
+. partition by절 : 그룹핑 기준 컬럼
+. order by절 : 정렬기준 컬럼
+. windowing절 : 처리할 행의 범위를 지정.
 */
 
 --1. 순위함수
@@ -2541,11 +2540,11 @@ comment on column tbl_files.filepath is '파일 경로';
 --무결성은 데이터를 정확하고, 일관되게 유지하는것
 
 /*
-1. not null : null을 허용하지 않음. 필수값
-2. unique : 중복값을 허용하지 않음.
-3. primary key : not null + unique 레코드(행)에대한 식별자로써, 테이블당 1개 허용
-4. foreign key : 외래키, 데이터 참조무결성 보장. 부모테이블의 데이터만 허용
-5. check : 저장가능한 값의 범위/조건을 제한
+. not null : null을 허용하지 않음. 필수값
+. unique : 중복값을 허용하지 않음.
+. primary key : not null + unique 레코드(행)에대한 식별자로써, 테이블당 1개 허용
+. foreign key : 외래키, 데이터 참조무결성 보장. 부모테이블의 데이터만 허용
+. check : 저장가능한 값의 범위/조건을 제한
 
 일절 허용하지 않음. 49개컬럼은 들어가고 1개컬럼은 안들어가고 이런게 아님. 아예 reject거절됨
 */
@@ -3201,3 +3200,80 @@ select * from tb_names;
 select seq_tb_names_no.nextval, 
             seq_tb_names_no.currval
 from dual;
+
+--DD에서 조회
+select * from user_sequences;
+
+--복합문자열에 시퀀스 사용하기
+--주문번호 kh-20210205-1001
+create table tb_order(
+    order_id varchar2(50),
+    cnt number,
+    constraints pk_tb_order_id primary key(order_id)
+);
+
+create sequence  seq_order_id;
+
+insert into tb_order
+values('kh-' || to_char(sysdate, 'yyyymmdd') || '-' || to_char(seq_order_id.nextval, 'FM0000'), 100);
+
+select * from tb_order;
+
+--alter문을 통해 시작값 start with값은 절대 변경할 수 없다. 
+--그때 시퀀스객체 삭제후 재생성할 것.
+alter sequence seq_order_id increment by 10;
+
+
+
+----------------------------------------------
+-- INDEX
+----------------------------------------------
+--색인.
+--sql문 처리 속도 향상을 위해 컬럼에 대해 생성하는 객체
+--key: 컬럼값, value: 레코드논리적주소값 rowid
+--저장하는 데이터에 대한 별도의 공간이 필요함.
+
+--장점 : 
+--검색속도가 빨라지고, 시스템 부하를 줄여서 성능향상
+
+--단점:
+--인덱스를 위한 추가저장공간이 필요.
+--인덱스를 생성/수정하는 데 별도의 시간이 소요됨.
+
+--단순조회 업무보다 변경작업(insert/update/delete)가 많다면 index생성을 주의해야 한다.
+
+--인덱스로 사용하면 좋은 컬럼
+--1. 선택도 selectivity가 좋은 컬럼. 중복데이터가 적은 컬럼.
+-- id | 주민번호 | email | 전화번호 > 이름 > 부서코드 >>>>>>>>> 성별
+-- pk | uq제약조건이 사용된 컬럼은 자동으로 인덱스를 생성함 -- 삭제하려면 제약조건을 삭제해야함.
+
+--2. where절에 자주 사용되어지는 경우, 조인기준컬럼인 경
+--3. 입력된 데이터의 변경이 적은 컬럼.
+
+select *
+from user_indexes
+where table_name = 'EMPLOYEE';
+
+--job_code 인덱스가 없는 컬럼
+select *
+from employee
+where job_code = 'J1'; --table full scan
+
+--emp_id 인덱스가 있는 컬럼
+select *
+from employee
+where emp_id = '201'; --unique scan -> by index rowid
+
+--emp_name 조회
+select *
+from employee
+where emp_name = '송종기';
+
+--emp_name컬럼으로 인덱스 생성
+create index idx_employee_emp_name
+on employee(emp_name);
+
+
+
+
+
