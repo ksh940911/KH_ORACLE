@@ -1927,7 +1927,7 @@ where salary < (select avg(salary)
                      from employee
                      where nvl(dept_code, 1) = nvl(E.dept_code, 1));
 
---exists 연산자
+--exists 연산자 00:11:50~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --exists(서브쿼리) sub-query에 행이 존재하면 참, 행이 존재하지 않으면 거짓
 select * 
 from employee
