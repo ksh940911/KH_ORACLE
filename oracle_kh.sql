@@ -4165,3 +4165,121 @@ as
 select E.*
 from emp_copy E
 where 1 = 2;
+
+--ORA-04091: table KH.EMP_COPY is mutating, trigger/function may not see it
+--트리거 안에서는 원DML문의 대상테이블에 접근할 수 없다.
+create or replace trigger trig_emp_quit
+    before delete on emp_copy
+    for each row
+begin
+    insert into emp_copy_del
+    (emp_id, emp_name, emp_no, 
+    email, phone, dept_code, 
+    job_code, sal_level, salary, 
+    bonus, manager_id, hire_date, 
+    quit_date, quit_yn)
+    values 
+    (:old.emp_id, :old.emp_name, :old.emp_no, 
+    :old.email, :old.phone, :old.dept_code, 
+    :old.job_code, :old.sal_level, :old.salary, 
+    :old.bonus, :old.manager_id, 
+    :old.hire_date, sysdate, 'Y');
+    
+    dbms_output.put_line(:old.emp_id||'사원이 퇴사자 테이블로 이동했음');
+end;
+/
+
+select * from emp_copy;
+select * from emp_copy_del;
+
+delete from emp_copy
+where emp_id = 224;
+
+commit;
+rollback;
+
+select * from user_triggers;
+drop trigger trig_emp_name;
+
+--트리거를 이용한 상품 재고 관리
+--물건이 공장으로 들어왔다가 출고
+
+--cf. 부모, 자식테이블 : 뭐가 먼저 존재해야 하는지 생각해보기, 자식테이블에서 부모테이블을 참조해서 씀
+--부모 테이블
+create table product (
+    pcode number,
+    pname varchar2(100),
+    price number,
+    stock_cnt number default 0,
+    constraint pk_product_pcode primary key(pcode)
+);
+--자식 테이블
+create table product_io (
+    iocode number,
+    pcode number,
+    amount number,
+    status char(1),
+    io_date date default sysdate,
+    constraint pk_product_io_code primary key(iocode),
+    constraint fk_product_io_pcode foreign key(pcode)
+                                                         references product(pcode)
+);
+
+create sequence seq_product_pcode;
+
+create sequence seq_product_io_iocode
+start with 1000; --1000번대는 입출고 코드, 재고는 1번대
+
+--부모테이블의 상품에 해당하는 데이터 만들기
+insert into product
+values (seq_product_pcode.nextval, '아이폰12', 1500000, 0);
+
+insert into product
+values (seq_product_pcode.nextval, '갤럭시21', 990000, 0);
+
+
+--동시에 product테이블의 stock 숫자도 바뀜
+select * from product;
+--입고, 출고, 데이터가 일어날 때마다
+select * from product_io;
+--product_io테이블에 insert 입고 +n -> product 테이블의 update +n stock_cnt 
+--product_io테이블에 insert 출고 -n -> product 테이블의 update -n stock_cnt 
+
+
+--입출고 데이터가 insert되면, 해당상품의 재고수량을 변경하는 트리거
+create or replace trigger trg_product
+    before
+    insert on product_io --io테이블의 insert가 일어나면 트리거 작동
+    for each row --매 행마다
+begin
+--분기
+    --입고
+    if :new.status = 'I' then
+      update product --product테이블을 업데이트 할건데
+      set stock_cnt  = stock_cnt + :new.amount --stock_cnt값을 amount만큼 플러스로 설정해라 
+      where pcode = :new.pcode; --기존의 pcode가 새로 추가된 pcode와 동일한 행을 찾아서
+    --출고
+    else --status가 'O'인 경우
+      update product 
+      set stock_cnt  = stock_cnt - :new.amount --stock_cnt값을 amount만큼 마이너스로 설정해라 
+      where pcode = :new.pcode;   
+    end if;
+
+end;
+/
+
+--입출고 내역
+insert into product_io
+values(seq_product_io_iocode.nextval, 1, 5, 'I', sysdate);
+insert into product_io
+values(seq_product_io_iocode.nextval, 1, 100, 'I', sysdate);
+insert into product_io
+values(seq_product_io_iocode.nextval, 1, 30, 'O', sysdate);
+
+select * from product;
+select * from product_io;
+
+commit;
+
+--1. 원DML문의 대상테이블에 접근할 수 없다.
+--2. 트리거 안에서는 원DML문을 제어할 수 없다.
