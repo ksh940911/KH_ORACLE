@@ -2353,12 +2353,11 @@ insert into dml_sample (id, nick_name, name, enroll_date) values(200, '제임스
 insert into dml_sample (name, enroll_date) values('세종', sysdate);--nullable한 컬럼은 생략가능하다. 기본값이 있다면, 기본값이 적용된다.
 
 --not null이면서 기본값이 지정안된 경우 생략할 수 없다.
---insert into dml_sample (id, enroll_date) values(300, sysdate);-- ORA-01400: cannot insert NULL into ("KH"."DML_SAMPLE"."NAME")
+--insert into dml_sample (id, enroll_date) vwalues(300, sysdate);-- ORA-01400: cannot insert NULL into ("KH"."DML_SAMPLE"."NAME")
 
 insert into dml_sample (name) values('윤봉길');
 
 --서브쿼리를 이용한 insert
-
 create table emp_copy 
 as
 select * 
