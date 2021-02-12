@@ -2253,7 +2253,7 @@ where rnum between 시작 and 끝;
 
 
 --with구문
---inlineview서브쿼리에 별칭을 지정해서 재사용하게 함.
+--inline view 서브쿼리에 별칭을 지정해서 재사용하게 함.
 with emp_hire_date_asc
 as(select emp_name, hire_date
    from employee
@@ -2261,7 +2261,25 @@ as(select emp_name, hire_date
 select E.*
 from (select rownum rnum, E.*
         from emp_hire_date_asc E) E
-where rnum between 6 and 10;        
+where rnum between 6 and 10;
+
+with emp_hiredate
+as(select emp_name, hire_date
+    from employee
+    order by hire_date asc)
+    
+select E.*    
+from (select rownum rnum, E.*
+        from emp_hiredate E) E
+where rnum between 2 and 4;       --연습
+
+select E.*
+from(select rownum rnum, E.*
+        from (select emp_name, hire_date
+                from employee
+                order by hire_date asc) E) E
+where  rnum between 4 and 6;      --연습         
+
 
 --=====================================
 -- 2. WINDOW FUNCTION
