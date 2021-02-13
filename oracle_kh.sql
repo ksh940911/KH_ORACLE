@@ -2299,8 +2299,8 @@ window_function(args) over ([partition by절][order by절][windowing절])
 */
 
 --1. 순위함수
---1-1. rank() over() : 순위를 지정
-select emp_name, salary, rank() over(order by salary desc) rank
+--1-1. rank() over() : 순위를 지정, order by절 필수인듯
+select emp_name, salary, rank() over(order by salary desc) 
 from employee; --20등이 2명이라 21등이없고 22등이 그다음순위로 나옴
 
 --1-2. dense_rank() over() : 빠진 숫자 없이 순위를 지정
@@ -2311,14 +2311,14 @@ from employee; --20등이 2명이지만 그 다음순위를 22등이아닌 21등
 select emp_name, dept_code, salary, rank() over(partition by dept_code order by salary desc) rank_by_dept
 from employee;
 
---TOP-N분석에도 활용할수 있음
+--INLINE VIEW로 만들어서 TOP-N분석에도 활용할수 있음
 select E.*
 from(select emp_name, dept_code, salary, rank() over(partition by dept_code order by salary desc) rank_by_dept
        from employee) E
 where rank_by_dept between 1 and 3;       
 
 --2. 집계함수
---2-1. sum() over() : 일반 컬럼과 같이 사용할 수 있다.
+--2-1. sum() over() : 그룹함수임에도 일반 컬럼과 같이 사용할 수 있다.
 --select emp_name, sum(salary)
 --from employee; --일반컬럼과 같이 사용불가
 select emp_name, sum(salary) over()
@@ -2335,7 +2335,11 @@ from employee;
 select emp_name, dept_code, count(*) over(partition by dept_code) cnt_by_dept
 from employee;
 
---3. 분석함수는 안배움
+select emp_id 사번 ,emp_name 이름, (select emp_name from employee where e.manager_id = emp_id) 매니저이름, salary 월급
+from employee e
+where manager_id is not null and salary > (select avg(salary) from employee);
+ 
+--3. 분석함수는 안배움 // DQL공부는 여기까지가 끝. 이제 DML DDL TCL 순으로 공부하고나서 DB객체 소개하고 PL/SQL 공부할 예정
 
 
 --=====================================
