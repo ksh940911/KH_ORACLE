@@ -2343,7 +2343,7 @@ where manager_id is not null and salary > (select avg(salary) from employee);
 
 
 --=====================================
--- DML
+-- DML 여기부터
 --===================================== 
 -- Data Manipulation language 데이터 조작어
 -- CRUD(Create, Read or Retrieve, Update, Delete) 테이블 행에 대한 명령어
