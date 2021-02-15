@@ -1865,6 +1865,9 @@ select dept_code, max(salary)
 from employee
 group by dept_code;
 
+select emp_name, dept_code
+from employee;
+
 select emp_name, dept_code, salary
 from employee
 where(dept_code, salary) in (select dept_code, max(salary)
